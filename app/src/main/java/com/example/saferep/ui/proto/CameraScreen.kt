@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
+import com.example.saferep.model.PhotoSettingViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
@@ -40,7 +41,7 @@ import java.util.*
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun CameraScreen(navController: NavController) { // NavController를 파라미터로 받음
+fun CameraScreen(navController: NavController, viewModel: PhotoSettingViewModel) { // NavController를 파라미터로 받음
     val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
     var imageUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
 
@@ -51,7 +52,7 @@ fun CameraScreen(navController: NavController) { // NavController를 파라미�
             navController = navController,
             onImageCaptured = { uri ->
                 imageUris = imageUris + uri
-                Log.d("CameraScreen", "Image Captured: $uri")
+                viewModel.addPhoto(uri)
             },
             onError = { error ->
                 Log.e("CameraScreen", "View error:", error)
@@ -162,7 +163,6 @@ private fun CameraView(
             }
         }
 
-
         // ✅ 하단 컨트롤 버튼 (촬영, 종료)
         Row(
             modifier = Modifier
@@ -194,7 +194,7 @@ private fun CameraView(
 
             // 촬영 종료 버튼
             Button(
-                onClick = { navController.popBackStack() }, // 이전 화면으로 돌아가기
+                onClick = { navController.navigate("photo_preview") },
                 modifier = Modifier
                     .height(56.dp)
                     .width(150.dp),

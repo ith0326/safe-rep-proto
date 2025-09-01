@@ -3,6 +3,7 @@ package com.example.saferep
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -12,6 +13,8 @@ import com.example.saferep.ui.proto.CameraScreen
 import com.example.saferep.ui.proto.HomeScreen
 import com.example.saferep.ui.proto.PhotoSettingsScreen
 import com.example.saferep.ui.theme.SaferepTheme
+import com.example.saferep.model.PhotoSettingViewModel
+import com.example.saferep.ui.proto.PhotoPreviewScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -19,6 +22,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             SaferepTheme {
                 val navController = rememberNavController()
+
+                val photoSettingViewModel: PhotoSettingViewModel = viewModel()
+
                 NavHost(navController = navController, startDestination = "home") {
                     composable("home") {
                         HomeScreen(navController = navController)
@@ -28,10 +34,26 @@ class MainActivity : ComponentActivity() {
                         arguments = listOf(navArgument("siteName") { type = NavType.StringType })
                     ) { backStackEntry ->
                         val siteName = backStackEntry.arguments?.getString("siteName") ?: ""
-                        PhotoSettingsScreen(navController = navController, siteName = siteName)
+                        // ✅ ViewModel 전달
+                        PhotoSettingsScreen(
+                            navController = navController,
+                            siteName = siteName,
+                            viewModel = photoSettingViewModel
+                        )
                     }
                     composable("camera_screen") {
-                        CameraScreen(navController = navController)
+                        // ✅ ViewModel 전달
+                        CameraScreen(
+                            navController = navController,
+                            viewModel = photoSettingViewModel
+                        )
+                    }
+                    // ✅ 새로운 미리보기 화면 경로 추가 및 ViewModel 전달
+                    composable("photo_preview") {
+                        PhotoPreviewScreen(
+                            navController = navController,
+                            viewModel = photoSettingViewModel
+                        )
                     }
                 }
             }

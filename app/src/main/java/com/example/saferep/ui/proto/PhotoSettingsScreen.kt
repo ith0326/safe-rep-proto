@@ -27,12 +27,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.saferep.model.PhotoSettingViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun PhotoSettingsScreen(navController: NavController, siteName: String) {
+fun PhotoSettingsScreen(navController: NavController, siteName: String, viewModel: PhotoSettingViewModel) {
     var location by remember { mutableStateOf("") }
     var directInput by remember { mutableStateOf("") }
     var selectedChip by remember { mutableStateOf("상부") }
@@ -95,7 +96,17 @@ fun PhotoSettingsScreen(navController: NavController, siteName: String) {
         },
         bottomBar = {
             Button(
-                onClick = { navController.navigate("camera_screen") },
+                onClick = {
+                    viewModel.siteName.value = siteName
+                    viewModel.location.value = location
+                    viewModel.timestamp.value = currentTime
+
+                    viewModel.inspectionPart.value = selectedChip
+                    viewModel.inspectionDetail.value = selectedDetail
+
+                    viewModel.clearPhotos()
+                    navController.navigate("camera_screen")
+                },
                 enabled = selectedDetail != "",
                 modifier = Modifier
                     .fillMaxWidth()
