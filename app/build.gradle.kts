@@ -49,6 +49,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.protolite.well.known.types)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -61,6 +62,7 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.4.0")
     implementation("com.google.accompanist:accompanist-pager:0.32.0")
     implementation("com.google.accompanist:accompanist-pager-indicators:0.32.0")
+    implementation("androidx.exifinterface:exifinterface:1.3.7")
 
     val camerax_version = "1.3.1"
     implementation("androidx.camera:camera-core:${camerax_version}")

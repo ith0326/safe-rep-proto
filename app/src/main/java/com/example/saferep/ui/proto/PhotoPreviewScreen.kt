@@ -12,6 +12,10 @@ import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,6 +38,8 @@ fun PhotoPreviewScreen(
     val context = LocalContext.current
     val pagerState = rememberPagerState()
     val images = viewModel.capturedImageUris.value
+
+    var showConfirmDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -72,10 +78,7 @@ fun PhotoPreviewScreen(
                 // 처음으로 버튼
                 Button(
                     onClick = {
-                        // 홈 화면으로 이동 (이전 화면 스택 모두 제거)
-                        navController.navigate("home") {
-                            popUpTo("home") { inclusive = true }
-                        }
+                        showConfirmDialog = true
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFA500)),
                     modifier = Modifier.weight(1f).padding(horizontal = 4.dp)
@@ -178,12 +181,67 @@ fun PhotoPreviewScreen(
                     Text("저장 위치", fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(8.dp))
 
+                    val siteName = viewModel.siteName.value
                     val datePart = viewModel.timestamp.value.split(" ").firstOrNull() ?: ""
-                    val basePath = "/SAFE-REP/${viewModel.siteName.value}/${datePart}/${viewModel.location.value}/"
+                    val location = viewModel.location.value
+                    val inspectionPart = viewModel.inspectionPart.value
+                    val inspectionDetail = viewModel.inspectionDetail.value
 
-                    Text(basePath, fontSize = 14.sp)
+                    val basePath = if (location.isBlank()) {
+                        "/SAFE-REP/${siteName}/${datePart}/"
+                    } else {
+                        "/SAFE-REP/${siteName}/${datePart}/${location}/${inspectionPart}/${inspectionDetail}/"
+                    }
+
+                    // 저장경로
+                    viewModel.basePath.value = basePath
+
+                    Text("Pictures" + basePath, fontSize = 14.sp)
                 }
             }
         }
+    }
+
+    if (showConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                // 모달 바깥쪽을 클릭하거나 뒤로가기 버튼을 눌렀을 때 모달을 닫음
+                showConfirmDialog = false
+            },
+            title = {
+                Text(text = "확인")
+            },
+            text = {
+                Text(text = "사진 저장 후 홈 화면으로 이동합니다.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showConfirmDialog = false // 모달 닫기
+
+                        // TODO: 1. 여기에 실제 파일 저장 로직을 호출합니다.
+                        // 예시: viewModel.saveImages() 또는 별도의 파일 저장 함수 호출
+                        // 현재는 Toast 메시지로 대체합니다.
+                        Toast.makeText(context, "파일 저장 로직 실행 (예정)", Toast.LENGTH_SHORT).show()
+
+                        // 2. 홈 화면으로 이동 (이전 화면 스택 모두 제거)
+                        navController.navigate("home") {
+                            popUpTo("home") { inclusive = true }
+                        }
+                    }
+                ) {
+                    Text("확인")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showConfirmDialog = false // 모달 닫기
+                    }
+                ) {
+                    Text("취소")
+                }
+            }
+        )
     }
 }
