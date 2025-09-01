@@ -1,6 +1,7 @@
 package com.example.saferep.ui.proto
 
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,9 +13,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material3.*
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.runtime.*
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -31,6 +37,8 @@ fun PhotoSettingsScreen(navController: NavController, siteName: String) {
     var directInput by remember { mutableStateOf("") }
     var selectedChip by remember { mutableStateOf("상부") }
     val scrollState = rememberScrollState()
+
+    val niceBlue = Color(0xFF6495ED)
 
     val context = LocalContext.current
 
@@ -57,6 +65,17 @@ fun PhotoSettingsScreen(navController: NavController, siteName: String) {
                 },
                 onCancel = { showDetailBottomSheet = false } // 취소 시 닫기
             )
+        }
+    }
+
+    var isLocationFocused by remember { mutableStateOf(false) }
+
+    val focusRequester = remember { FocusRequester() }
+    var isDirectInputFocused by remember { mutableStateOf(false) }
+
+    LaunchedEffect(selectedChip) {
+        if (selectedChip == "직접입력") {
+            focusRequester.requestFocus()
         }
     }
 
@@ -111,50 +130,106 @@ fun PhotoSettingsScreen(navController: NavController, siteName: String) {
             OutlinedTextField(
                 value = location,
                 onValueChange = { location = it },
-                placeholder = { Text("직접 입력 (예: 중앙부, 단부, 교각#3)") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp)
+                placeholder = { Text(if (isLocationFocused) "입력중" else "직접 입력 (예: 중앙부, 단부, 교각#3)") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onFocusChanged { focusState ->
+                        isLocationFocused = focusState.isFocused
+                    },
+                shape = RoundedCornerShape(8.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = niceBlue,
+                    unfocusedBorderColor = Color.LightGray
+                )
             )
             Spacer(modifier = Modifier.height(24.dp))
 
             // 점검부위 섹션
             SectionTitle(text = "점검부위 *")
-            val chipItems = listOf("상부", "하부", "받침", "케이블", "2차부재", "기타부재", "공통", "직접입력")
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                chipItems.forEach { item ->
-                    Chip(text = item, isSelected = selectedChip == item) {
-                        selectedChip = item
+            if (selectedDetail.isBlank()) {
+                val chipItems = listOf("상부", "하부", "받침", "케이블", "2차부재", "기타부재", "공중", "직접입력")
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    chipItems.forEach { item ->
+                        Chip(text = item, isSelected = selectedChip == item, selectedColor = niceBlue) {
+                            selectedChip = item
+                        }
                     }
                 }
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = directInput,
+                    onValueChange = { directInput = it },
+                    placeholder = { Text(if (isDirectInputFocused) "입력중" else "직접입력시 활성화") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(focusRequester)
+                        .onFocusChanged { focusState ->
+                            isDirectInputFocused = focusState.isFocused
+                        },
+                    enabled = selectedChip == "직접입력", // '직접입력' 칩 선택 시에만 활성화
+                    shape = RoundedCornerShape(8.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = niceBlue,
+                        unfocusedBorderColor = Color.LightGray
+                    )
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = {
+                        if(selectedChip.isEmpty()) {
+                            Toast.makeText(context, "점검부위를 선택해주세요.", Toast.LENGTH_SHORT).show()
+                        } else {
+                            showDetailBottomSheet = true
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = niceBlue,
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text("세부 부위 선택하기", fontSize = 18.sp)
+                }
+            } else {
+                OutlinedTextField(
+                    value = selectedChip + ">" + selectedDetail,
+                    onValueChange = {},
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = false, // 비활성화
+                    label = { Text("선택된 세부 부위") },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        disabledBorderColor = Color.LightGray,
+                        disabledTextColor = Color.Black,
+                        disabledLabelColor = Color.Gray
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    onClick = {
+                        selectedDetail = ""
+                        selectedChip = "상부" // 기본값으로 리셋
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = niceBlue,
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text("점검 부위 다시 선택", fontSize = 18.sp)
+                }
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
-                value = directInput,
-                onValueChange = { directInput = it },
-                placeholder = { Text("직접입력시 활성화") },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = selectedChip == "직접입력", // '직접입력' 칩 선택 시에만 활성화
-                shape = RoundedCornerShape(8.dp)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Button(
-                onClick = {
-                    if(selectedChip.isEmpty()) {
-                        Toast.makeText(context, "점검부위를 선택해주세요.", Toast.LENGTH_SHORT).show()
-                    } else {
-                        showDetailBottomSheet = true
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text("세부 부위 선택하기", fontSize = 18.sp)
-            }
+
             Spacer(modifier = Modifier.height(24.dp))
 
             // 시각 섹션
@@ -165,13 +240,21 @@ fun PhotoSettingsScreen(navController: NavController, siteName: String) {
                     onValueChange = {},
                     readOnly = true, // 읽기 전용
                     modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(8.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = niceBlue,
+                        unfocusedBorderColor = Color.LightGray
+                    )
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Button(
+                OutlinedButton(
                     onClick = { /* 지금 시간 */ },
                     modifier = Modifier.height(56.dp),
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = niceBlue
+                    ),
+                    border = BorderStroke(1.dp, Color.LightGray)
                 ) {
                     Text("지금 시간")
                 }
@@ -196,6 +279,8 @@ fun SectionTitle(text: String) {
 // '현재 현장' 카드 UI를 위한 Composable
 @Composable
 fun SectionCard(title: String, siteName: String, onActionClick: () -> Unit) {
+    val niceBlue = Color(0xFF6495ED)
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -209,7 +294,16 @@ fun SectionCard(title: String, siteName: String, onActionClick: () -> Unit) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(siteName, fontWeight = FontWeight.Bold, fontSize = 18.sp)
         }
-        OutlinedButton(onClick = onActionClick) {
+        OutlinedButton(
+            onClick = onActionClick,
+            modifier = Modifier.height(56.dp),
+            shape = RoundedCornerShape(8.dp),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = niceBlue
+            ),
+            border = BorderStroke(1.dp, Color.LightGray)
+
+        ) {
             Text("변경")
         }
     }
@@ -218,12 +312,16 @@ fun SectionCard(title: String, siteName: String, onActionClick: () -> Unit) {
 // '점검부위' 칩 UI를 위한 Composable
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Chip(text: String, isSelected: Boolean, onClick: () -> Unit) {
+fun Chip(text: String, isSelected: Boolean, selectedColor: Color, onClick: () -> Unit) {
     FilterChip(
         selected = isSelected,
         onClick = onClick,
         label = { Text(text) },
         shape = RoundedCornerShape(50),
+        colors = FilterChipDefaults.filterChipColors(
+            selectedContainerColor = selectedColor,
+            selectedLabelColor = Color.White
+        ),
         border = FilterChipDefaults.filterChipBorder(
             enabled = true,
             selected = isSelected,
@@ -247,18 +345,26 @@ fun DetailBottomSheetContent(
         "케이블" -> listOf("케이블", "정착구", "행어밴드", "새들", "직접입력")
         "2차부재" -> listOf("가로보", "세로보", "직접입력")
         "기타부재" -> listOf("신축이음", "배수시설", "난간", "연석", "교면포장", "직접입력")
-        "공중" -> listOf("추락방지시설", "도로포장", "도로부 신축이음부", "환기구", "직접입력 ")
+        "공중" -> listOf("추락방지시설", "도로포장", "도로부 신축이음부", "환기구", "직접입력")
         else -> emptyList()
     }
 
     val displayItems = detailItems + "직접입력"
 
+    val niceBlue = Color(0xFF6495ED)
+    val lightGray = Color(0xFFF0F0F0)
+
     var currentSelection by remember { mutableStateOf(displayItems.firstOrNull() ?: "") }
     var directInputText by remember { mutableStateOf("") }
 
+    val focusRequester = remember { FocusRequester() }
+    var isDirectInputFocused by remember { mutableStateOf(false) }
 
-    val niceBlue = Color(0xFF6495ED)
-    val lightGray = Color(0xFFF0F0F0)
+    LaunchedEffect(currentSelection) {
+        if (currentSelection == "직접입력") {
+            focusRequester.requestFocus()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -318,11 +424,17 @@ fun DetailBottomSheetContent(
         // ✅ 5. 직접 입력 텍스트 필드 추가
         OutlinedTextField(
             value = directInputText,
-            onValueChange = { directInputText = it },
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("직접입력 선택시 활성화") },
+            onValueChange = { directInputText = it },modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(focusRequester)
+                .onFocusChanged { isDirectInputFocused = it.isFocused },
+            placeholder = { Text(if (isDirectInputFocused) "입력중" else "직접입력 선택시 활성화") },
             shape = RoundedCornerShape(8.dp),
-            enabled = currentSelection == "직접입력" // '직접입력'이 선택됐을 때만 활성화
+            enabled = currentSelection == "직접입력", // '직접입력'이 선택됐을 때만 활성화
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = niceBlue,
+                unfocusedBorderColor = Color.LightGray
+            )
         )
     }
 }

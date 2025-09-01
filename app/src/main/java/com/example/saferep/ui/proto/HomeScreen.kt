@@ -208,7 +208,7 @@ fun BottomSheetContent(onConfirm: (String) -> Unit, onCancel: () -> Unit) {
     val sites = listOf("장흥교", "장형교", "전조1교") // 현장 목록
     var selectedSite by remember { mutableStateOf(sites[0]) }
 
-    val niceBlue = Color(0xFF6495ED)
+    val niceBlue = Color(0xFF1E88E5)
     val lightGray = Color(0xFFF0F0F0)
 
     Column(
