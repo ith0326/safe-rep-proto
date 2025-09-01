@@ -2,6 +2,8 @@ package com.example.saferep.ui.proto
 
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -35,6 +37,16 @@ fun HomeScreen(navController: NavController) {
     val lightGray = Color(0xFFE0E0E0)
     val darkGray = Color(0xFF616161)
     val lightBlue = Color(0xFF6495ED)
+
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val buttonContainerColor = if (isPressed) lightBlue else Color.White
+    val buttonContentColor = if (isPressed) Color.White else lightBlue
+
+    val settingsButtonInteractionSource = remember { MutableInteractionSource() }
+    val isSettingsButtonPressed by settingsButtonInteractionSource.collectIsPressedAsState()
+    val settingsButtonContainerColor = if (isSettingsButtonPressed) lightBlue else Color.White
+    val settingsButtonContentColor = if (isSettingsButtonPressed) Color.White else lightBlue
 
     val context = LocalContext.current
 
@@ -114,9 +126,10 @@ fun HomeScreen(navController: NavController) {
                     onClick = { showBottomSheet = true },
                     modifier = Modifier.height(56.dp),
                     shape = RoundedCornerShape(topEnd = 8.dp, bottomEnd = 8.dp),
+                    interactionSource = interactionSource,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White,
-                        contentColor = lightBlue
+                        containerColor = buttonContainerColor,
+                        contentColor = buttonContentColor
                     ),
                     border = BorderStroke(1.dp, lightGray)
                 ) {
@@ -127,29 +140,50 @@ fun HomeScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(16.dp))
 
             // 2-2. 사진 촬영 시작 버튼
-            OutlinedButton(
-                onClick = {
-                    if (siteName.isBlank()) {
-                        Toast.makeText(context, "현장 이름은 필수값입니다.", Toast.LENGTH_SHORT).show()
-                    } else {
-                        navController.navigate("photo_settings/$siteName")
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(80.dp),
-                shape = RoundedCornerShape(8.dp),
-                border = BorderStroke(1.dp, lightGray),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = darkGray)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.CameraAlt,
-                        contentDescription = "카메라 아이콘",
-                        modifier = Modifier.size(28.dp)
+            if (siteName.isNotBlank()) {
+                Button(
+                    onClick = { navController.navigate("photo_settings/$siteName") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(80.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = lightBlue, // 배경색: niceBlue
+                        contentColor = Color.White    // 내용색: 흰색
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(text = "사진 촬영 시작", fontSize = 18.sp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.CameraAlt,
+                            contentDescription = "카메라 아이콘",
+                            modifier = Modifier.size(28.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(text = "사진 촬영 시작", fontSize = 18.sp)
+                    }
+                }
+            } else {
+                // ✅ siteName이 비어있는 경우 (비활성 상태)
+                OutlinedButton(
+                    onClick = {
+                        Toast.makeText(context, "현장 이름은 필수값입니다.", Toast.LENGTH_SHORT).show()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(80.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    border = BorderStroke(1.dp, lightGray),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = darkGray)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.CameraAlt,
+                            contentDescription = "카메라 아이콘",
+                            modifier = Modifier.size(28.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(text = "사진 촬영 시작", fontSize = 18.sp)
+                    }
                 }
             }
         }
@@ -163,9 +197,10 @@ fun HomeScreen(navController: NavController) {
                 .fillMaxWidth()
                 .height(56.dp),
             shape = RoundedCornerShape(8.dp),
+            interactionSource = settingsButtonInteractionSource,
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color.White,
-                contentColor = Color.Black
+                containerColor = settingsButtonContainerColor,
+                contentColor = settingsButtonContentColor
             ),
             border = BorderStroke(1.dp, lightGray)
         ) {

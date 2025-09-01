@@ -95,7 +95,8 @@ fun PhotoSettingsScreen(navController: NavController, siteName: String) {
         },
         bottomBar = {
             Button(
-                onClick = { /* 카메라 열기 동작 */ },
+                onClick = { navController.navigate("camera_screen") },
+                enabled = selectedDetail != "",
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
@@ -146,7 +147,7 @@ fun PhotoSettingsScreen(navController: NavController, siteName: String) {
 
             // 점검부위 섹션
             SectionTitle(text = "점검부위 *")
-            if (selectedDetail.isBlank()) {
+            if (selectedChip == "직접입력" || selectedDetail.isBlank()) {
                 val chipItems = listOf("상부", "하부", "받침", "케이블", "2차부재", "기타부재", "공중", "직접입력")
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
@@ -154,14 +155,24 @@ fun PhotoSettingsScreen(navController: NavController, siteName: String) {
                 ) {
                     chipItems.forEach { item ->
                         Chip(text = item, isSelected = selectedChip == item, selectedColor = niceBlue) {
+                            if (selectedChip == "직접입력" && item != "직접입력") {
+                                selectedDetail = ""
+                            }
+
                             selectedChip = item
+                            if (item != "직접입력") {
+                                directInput = ""
+                            }
                         }
                     }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = directInput,
-                    onValueChange = { directInput = it },
+                    onValueChange = {
+                        directInput = it
+                        selectedDetail = it
+                    },
                     placeholder = { Text(if (isDirectInputFocused) "입력중" else "직접입력시 활성화") },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -169,7 +180,7 @@ fun PhotoSettingsScreen(navController: NavController, siteName: String) {
                         .onFocusChanged { focusState ->
                             isDirectInputFocused = focusState.isFocused
                         },
-                    enabled = selectedChip == "직접입력", // '직접입력' 칩 선택 시에만 활성화
+                    enabled = selectedChip == "직접입력",
                     shape = RoundedCornerShape(8.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = niceBlue,
@@ -179,12 +190,13 @@ fun PhotoSettingsScreen(navController: NavController, siteName: String) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
                     onClick = {
-                        if(selectedChip.isEmpty()) {
+                        if (selectedChip.isEmpty()) {
                             Toast.makeText(context, "점검부위를 선택해주세요.", Toast.LENGTH_SHORT).show()
                         } else {
                             showDetailBottomSheet = true
                         }
                     },
+                    enabled = selectedChip != "직접입력",
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
@@ -197,11 +209,12 @@ fun PhotoSettingsScreen(navController: NavController, siteName: String) {
                     Text("세부 부위 선택하기", fontSize = 18.sp)
                 }
             } else {
+                // 이 블록은 이제 '직접입력'이 아닌 다른 칩에서 세부 부위를 선택했을 때만 표시됩니다.
                 OutlinedTextField(
                     value = selectedChip + ">" + selectedDetail,
                     onValueChange = {},
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = false, // 비활성화
+                    enabled = false,
                     label = { Text("선택된 세부 부위") },
                     colors = OutlinedTextFieldDefaults.colors(
                         disabledBorderColor = Color.LightGray,
@@ -215,7 +228,7 @@ fun PhotoSettingsScreen(navController: NavController, siteName: String) {
                 Button(
                     onClick = {
                         selectedDetail = ""
-                        selectedChip = "상부" // 기본값으로 리셋
+                        selectedChip = "상부"
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -238,7 +251,7 @@ fun PhotoSettingsScreen(navController: NavController, siteName: String) {
                 OutlinedTextField(
                     value = currentTime,
                     onValueChange = {},
-                    readOnly = true, // 읽기 전용
+                    enabled = false,
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(8.dp),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -246,18 +259,6 @@ fun PhotoSettingsScreen(navController: NavController, siteName: String) {
                         unfocusedBorderColor = Color.LightGray
                     )
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                OutlinedButton(
-                    onClick = { /* 지금 시간 */ },
-                    modifier = Modifier.height(56.dp),
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = niceBlue
-                    ),
-                    border = BorderStroke(1.dp, Color.LightGray)
-                ) {
-                    Text("지금 시간")
-                }
             }
             Spacer(modifier = Modifier.height(24.dp))
         }

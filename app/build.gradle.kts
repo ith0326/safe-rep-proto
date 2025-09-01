@@ -58,4 +58,11 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation("androidx.compose.material:material-icons-extended-android:1.6.8") // 아이콘 라이브러리 추가
     implementation("androidx.navigation:navigation-compose:2.7.7")
+
+    val camerax_version = "1.3.1"
+    implementation("androidx.camera:camera-core:${camerax_version}")
+    implementation("androidx.camera:camera-camera2:${camerax_version}")
+    implementation("androidx.camera:camera-lifecycle:${camerax_version}")
+    implementation("androidx.camera:camera-view:${camerax_version}")
+    implementation("com.google.accompanist:accompanist-permissions:0.34.0") // Accompanist - Jetpack Compose 권한 요청 라이브러리
 }

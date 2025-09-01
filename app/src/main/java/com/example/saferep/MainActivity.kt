@@ -8,6 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.saferep.ui.proto.CameraScreen
 import com.example.saferep.ui.proto.HomeScreen
 import com.example.saferep.ui.proto.PhotoSettingsScreen
 import com.example.saferep.ui.theme.SaferepTheme
@@ -15,10 +16,8 @@ import com.example.saferep.ui.theme.SaferepTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { // 👈 모든 Composable 코드는 이 블록 안에서 시작해야 합니다.
-
+        setContent {
             SaferepTheme {
-                // ✅ NavController와 NavHost를 setContent 블록 안으로 이동
                 val navController = rememberNavController()
                 NavHost(navController = navController, startDestination = "home") {
                     composable("home") {
@@ -30,6 +29,9 @@ class MainActivity : ComponentActivity() {
                     ) { backStackEntry ->
                         val siteName = backStackEntry.arguments?.getString("siteName") ?: ""
                         PhotoSettingsScreen(navController = navController, siteName = siteName)
+                    }
+                    composable("camera_screen") {
+                        CameraScreen(navController = navController)
                     }
                 }
             }
