@@ -63,7 +63,11 @@ fun PhotoPreviewScreen(
                 ) {
                     Icon(Icons.Default.Save, contentDescription = "Save")
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("저장")
+                    Text(
+                        "저장",
+                        fontSize = 12.sp,
+                        softWrap = false
+                    )
                 }
                 // 처음으로 버튼
                 Button(
@@ -78,7 +82,11 @@ fun PhotoPreviewScreen(
                 ) {
                     Icon(Icons.Default.Home, contentDescription = "Home")
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("처음으로")
+                    Text(
+                        "처음으로",
+                        fontSize = 12.sp,
+                        softWrap = false
+                    )
                 }
                 // 다시 촬영 버튼
                 Button(
@@ -92,7 +100,11 @@ fun PhotoPreviewScreen(
                 ) {
                     Icon(Icons.Default.PhotoCamera, contentDescription = "Retake")
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("다시 촬영")
+                    Text(
+                        "다시 촬영",
+                        fontSize = 12.sp,
+                        softWrap = false
+                    )
                 }
             }
         }
