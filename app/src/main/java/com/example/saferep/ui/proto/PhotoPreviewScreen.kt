@@ -79,7 +79,13 @@ fun PhotoPreviewScreen(
                 // 처음으로 버튼
                 Button(
                     onClick = {
-                        showConfirmHomeDialog = true
+                        if(viewModel.capturedImageUris.value.isEmpty()) {
+                            navController.navigate("home") {
+                                popUpTo("home") { inclusive = true }
+                            }
+                        } else {
+                            showConfirmHomeDialog = true
+                        }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFA500)),
                     modifier = Modifier.weight(1f).padding(horizontal = 4.dp)
