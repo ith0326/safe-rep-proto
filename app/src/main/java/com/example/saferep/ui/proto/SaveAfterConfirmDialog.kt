@@ -16,10 +16,11 @@ import androidx.compose.ui.window.Dialog
 import com.example.saferep.model.PhotoSettingViewModel
 
 @Composable
-fun RetakeConfirmDialog(
+fun SaveAfterConfirmDialog(
     onDismissRequest: () -> Unit,
-    onSaveAndRetake: () -> Unit,
-    onRetakeWithoutSaving: () -> Unit,
+    onGoHome: () -> Unit,
+    onRetakeSameSetting: () -> Unit,
+    onRetakeNewSetting: () -> Unit,
 ) {
     Dialog(onDismissRequest = onDismissRequest) {
         Card(
@@ -40,7 +41,7 @@ fun RetakeConfirmDialog(
             ) {
                 // 제목
                 Text(
-                    text = "다시 찍기",
+                    text = "저장 완료",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -59,9 +60,9 @@ fun RetakeConfirmDialog(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // 1. 전체 저장 후 다시찍기 버튼
+                    // 1. 같은 설정으로 다시찍기 버튼
                     Button(
-                        onClick = onSaveAndRetake,
+                        onClick = onRetakeSameSetting,
                         modifier = Modifier.fillMaxWidth().height(50.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
@@ -70,12 +71,12 @@ fun RetakeConfirmDialog(
                         ),
                         border = BorderStroke(1.dp, Color.LightGray)
                     ) {
-                        Text("전체 저장 후 다시찍기")
+                        Text("같은 설정으로 다시찍기")
                     }
 
-                    // 2. 저장하지 않고 다시찍기 버튼
+                    // 2. 설정 다시하고 다시찍기 버튼
                     Button(
-                        onClick = onRetakeWithoutSaving,
+                        onClick = onRetakeNewSetting,
                         modifier = Modifier.fillMaxWidth().height(50.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
@@ -83,12 +84,12 @@ fun RetakeConfirmDialog(
                             contentColor = Color(0xFFD32F2F)   // 붉은색 텍스트
                         )
                     ) {
-                        Text("저장하지 않고 다시찍기")
+                        Text("설정 다시하고 다시찍기")
                     }
 
-                    // 3. 취소 버튼
+                    // 3. 홈으로 버튼
                     Button(
-                        onClick = onDismissRequest, // 취소는 onDismissRequest 호출
+                        onClick = onGoHome, // 취소는 onDismissRequest 호출
                         modifier = Modifier.fillMaxWidth().height(50.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
@@ -96,7 +97,7 @@ fun RetakeConfirmDialog(
                             contentColor = Color.Black
                         )
                     ) {
-                        Text("취소")
+                        Text("홈으로")
                     }
                 }
             }

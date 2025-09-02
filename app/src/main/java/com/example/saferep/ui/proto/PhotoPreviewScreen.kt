@@ -44,6 +44,7 @@ fun PhotoPreviewScreen(
     var isSaving by remember { mutableStateOf(false) }
 
     var showRetakeDialog by remember { mutableStateOf(false) }
+    var showSaveAfterDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -94,9 +95,7 @@ fun PhotoPreviewScreen(
                 // 다시 촬영 버튼
                 Button(
                     onClick = {
-                        // ViewModel의 사진 목록 초기화 후 이전 화면(카메라)으로 이동
-                        viewModel.clearPhotos()
-                        navController.popBackStack()
+                        showRetakeDialog = true
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
                     modifier = Modifier.weight(1f).padding(horizontal = 4.dp)
@@ -283,7 +282,7 @@ fun PhotoPreviewScreen(
 
                                 if (success) {
                                     viewModel.clearPhotos()
-                                    showRetakeDialog = true
+                                    showSaveAfterDialog = true
                                 } else {
                                     // 저장 실패 시 추가적인 사용자 안내 또는 로직
                                 }
@@ -315,26 +314,65 @@ fun PhotoPreviewScreen(
 
     if (showRetakeDialog) {
         RetakeConfirmDialog(
-            viewModel = viewModel,
             onDismissRequest = {
                 // 사용자가 팝업 바깥을 누르거나 '취소' 버튼을 누르면 상태를 false로 바꿔 팝업을 닫습니다.
                 showRetakeDialog = false
             },
-            onGoHome = {
-                showRetakeDialog = false
-
-                navController.navigate("home") {
-                    popUpTo("home") { inclusive = true }
-                }
-            },
             onSaveAndRetake = {
+                if (!isSaving) { // 중복 실행 방지
+                    isSaving = true // 저장 시작 상태로 변경
+
+                    viewModel.saveCapturedImages(context) { success, message ->
+                        // 저장 완료 후 UI 스레드에서 실행
+                        isSaving = false // 저장 완료 상태로 변경
+                        showConfirmSaveDialog = false // 모달 닫기
+
+                        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+
+                        if (success) {
+                            viewModel.clearPhotos()
+                        } else {
+                            // 저장 실패 시 추가적인 사용자 안내 또는 로직
+                        }
+                    }
+                }
+
                 showRetakeDialog = false
                 navController.navigate("camera_screen"){
                     popUpTo("home") { inclusive = true }
                 }
             },
             onRetakeWithoutSaving = {
+                viewModel.clearPhotos()
                 showRetakeDialog = false
+                navController.navigate("camera_screen"){
+                    popUpTo("home") { inclusive = true }
+                }
+            }
+        )
+    }
+
+    if (showSaveAfterDialog) {
+        SaveAfterConfirmDialog(
+            onDismissRequest = {
+                // 사용자가 팝업 바깥을 누르거나 '취소' 버튼을 누르면 상태를 false로 바꿔 팝업을 닫습니다.
+                showSaveAfterDialog = false
+            },
+            onGoHome = {
+                showSaveAfterDialog = false
+
+                navController.navigate("home") {
+                    popUpTo("home") { inclusive = true }
+                }
+            },
+            onRetakeSameSetting = {
+                showSaveAfterDialog = false
+                navController.navigate("camera_screen"){
+                    popUpTo("home") { inclusive = true }
+                }
+            },
+            onRetakeNewSetting = {
+                showSaveAfterDialog = false
                 val siteName = viewModel.siteName.value
                 navController.navigate("photo_settings/$siteName") {
                     popUpTo("home") { inclusive = true }
