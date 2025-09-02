@@ -38,12 +38,24 @@ import com.google.accompanist.permissions.rememberPermissionState
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
+import android.media.MediaActionSound
+import androidx.compose.runtime.DisposableEffect
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun CameraScreen(navController: NavController, viewModel: PhotoSettingViewModel) { // NavController를 파라미터로 받음
     val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
     var imageUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
+
+    val mediaActionSound = remember { MediaActionSound() }
+
+    // 화면이 사라질 때 리소스를 해제하기 위한 DisposableEffect
+    DisposableEffect(Unit) {
+        mediaActionSound.load(MediaActionSound.SHUTTER_CLICK)
+        onDispose {
+            mediaActionSound.release()
+        }
+    }
 
     // 권한이 승인되었는지 확인합니다.
     if (cameraPermissionState.status.isGranted) {
@@ -56,7 +68,8 @@ fun CameraScreen(navController: NavController, viewModel: PhotoSettingViewModel)
             },
             onError = { error ->
                 Log.e("CameraScreen", "View error:", error)
-            }
+            },
+            mediaActionSound = mediaActionSound
         )
     } else {
         // 권한이 없으면 권한을 요청하는 화면을 표시합니다.
@@ -80,7 +93,8 @@ fun CameraScreen(navController: NavController, viewModel: PhotoSettingViewModel)
 private fun CameraView(
     navController: NavController,
     onImageCaptured: (Uri) -> Unit,
-    onError: (ImageCaptureException) -> Unit
+    onError: (ImageCaptureException) -> Unit,
+    mediaActionSound: MediaActionSound
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -176,6 +190,7 @@ private fun CameraView(
             // 촬영 버튼
             Button(
                 onClick = {
+                    mediaActionSound.play(MediaActionSound.SHUTTER_CLICK) // 셔터음 재생
                     imageCapture?.let {
                         takePhoto(it, context, onImageCaptured, onError)
                     }
