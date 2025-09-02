@@ -3,6 +3,8 @@ package com.example.saferep.ui.proto
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -15,6 +17,7 @@ import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material3.*
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,6 +40,7 @@ fun PhotoSettingsScreen(navController: NavController, siteName: String, viewMode
     var location by remember { mutableStateOf("") }
     var directInput by remember { mutableStateOf("") }
     var selectedChip by remember { mutableStateOf("상부") }
+    var siteName by remember { mutableStateOf(siteName) }
     val scrollState = rememberScrollState()
 
     val niceBlue = Color(0xFF6495ED)
@@ -73,6 +77,24 @@ fun PhotoSettingsScreen(navController: NavController, siteName: String, viewMode
 
     val focusRequester = remember { FocusRequester() }
     var isDirectInputFocused by remember { mutableStateOf(false) }
+
+    var showBottomSheet by remember { mutableStateOf(false) }
+    if (showBottomSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBottomSheet = false }, // 배경 클릭 시 닫기
+            sheetState = sheetState
+        ) {
+            // ModalBottomSheet 안에 들어갈 내용 (새로운 화면)
+            BottomSheetContent(
+                onConfirm = { selectedSite ->
+                    // 확인 버튼을 누르면 선택된 현장 이름을 TextField에 반영
+                    siteName = selectedSite
+                    showBottomSheet = false
+                },
+                onCancel = { showBottomSheet = false } // 취소 버튼을 누르면 닫기
+            )
+        }
+    }
 
     LaunchedEffect(selectedChip) {
         if (selectedChip == "직접입력") {
@@ -133,7 +155,7 @@ fun PhotoSettingsScreen(navController: NavController, siteName: String, viewMode
             SectionCard(
                 title = "현재 현장",
                 siteName = siteName,
-                onActionClick = {}
+                onActionClick = { showBottomSheet = true }
             )
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -293,6 +315,11 @@ fun SectionTitle(text: String) {
 fun SectionCard(title: String, siteName: String, onActionClick: () -> Unit) {
     val niceBlue = Color(0xFF6495ED)
 
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val buttonContainerColor = if (isPressed) niceBlue else Color.White
+    val buttonContentColor = if (isPressed) Color.White else niceBlue
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -306,15 +333,16 @@ fun SectionCard(title: String, siteName: String, onActionClick: () -> Unit) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(siteName, fontWeight = FontWeight.Bold, fontSize = 18.sp)
         }
-        OutlinedButton(
+        Button(
             onClick = onActionClick,
             modifier = Modifier.height(56.dp),
             shape = RoundedCornerShape(8.dp),
-            colors = ButtonDefaults.outlinedButtonColors(
-                contentColor = niceBlue
+            interactionSource = interactionSource,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = buttonContainerColor,
+                contentColor = buttonContentColor
             ),
             border = BorderStroke(1.dp, Color.LightGray)
-
         ) {
             Text("변경")
         }
@@ -448,5 +476,56 @@ fun DetailBottomSheetContent(
                 unfocusedBorderColor = Color.LightGray
             )
         )
+    }
+
+    @Composable
+    fun BottomSheetContent(onConfirm: (String) -> Unit, onCancel: () -> Unit) {
+        val sites = listOf("장흥교", "장형교", "전조1교") // 현장 목록
+        var selectedSite by remember { mutableStateOf(sites[0]) }
+
+        val niceBlue = Color(0xFF1E88E5)
+        val lightGray = Color(0xFFF0F0F0)
+
+        Column(
+            modifier = Modifier
+                .fillMaxHeight(0.80f)
+                .padding(16.dp)
+        ) {
+            // 상단 메뉴 (취소, 현장 정보, 확인)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextButton(onClick = onCancel) {
+                    Text("취소")
+                }
+                Text("현장 정보", fontWeight = FontWeight.Bold)
+                TextButton(onClick = { onConfirm(selectedSite) }) {
+                    Text("확인")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // 현장 목록 버튼
+            sites.forEach { site ->
+                val isSelected = site == selectedSite
+                Button(
+                    onClick = { selectedSite = site },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isSelected) niceBlue else lightGray,
+                        contentColor = if (isSelected) Color.White else Color.Black
+                    )
+                ) {
+                    Text(site)
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+        }
     }
 }

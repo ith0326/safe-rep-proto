@@ -39,8 +39,11 @@ fun PhotoPreviewScreen(
     val pagerState = rememberPagerState()
     val images = viewModel.capturedImageUris.value
 
-    var showConfirmDialog by remember { mutableStateOf(false) }
+    var showConfirmHomeDialog by remember { mutableStateOf(false) }
+    var showConfirmSaveDialog by remember { mutableStateOf(false) }
     var isSaving by remember { mutableStateOf(false) }
+
+    var showRetakeDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -60,11 +63,7 @@ fun PhotoPreviewScreen(
                 // 저장 버튼
                 Button(
                     onClick = {
-                        // TODO: 최종 저장 로직 구현
-                        // 1. viewModel의 정보로 파일 경로 및 이름 생성
-                        // 2. images 목록의 임시 파일들을 최종 경로로 복사/이동
-                        // 3. (선택) 사진에 메타데이터 워터마크 추가
-                        Toast.makeText(context, "저장 기능은 구현해야 합니다.", Toast.LENGTH_SHORT).show()
+                        showConfirmSaveDialog = true
                     },
                     modifier = Modifier.weight(1f).padding(horizontal = 4.dp)
                 ) {
@@ -79,7 +78,7 @@ fun PhotoPreviewScreen(
                 // 처음으로 버튼
                 Button(
                     onClick = {
-                        showConfirmDialog = true
+                        showConfirmHomeDialog = true
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFA500)),
                     modifier = Modifier.weight(1f).padding(horizontal = 4.dp)
@@ -203,14 +202,11 @@ fun PhotoPreviewScreen(
         }
     }
 
-    if (showConfirmDialog) {
+    if (showConfirmHomeDialog) {
         AlertDialog(
             onDismissRequest = {
                 // 모달 바깥쪽을 클릭하거나 뒤로가기 버튼을 눌렀을 때 모달을 닫음
-                showConfirmDialog = false
-            },
-            title = {
-                Text(text = "확인")
+                showConfirmHomeDialog = false
             },
             text = {
                 Text(text = "사진 저장 후 홈 화면으로 이동합니다.")
@@ -220,11 +216,11 @@ fun PhotoPreviewScreen(
                     onClick = {
                         if (!isSaving) { // 중복 실행 방지
                             isSaving = true // 저장 시작 상태로 변경
-                            // ViewModel의 파일 저장 함수 호출
+
                             viewModel.saveCapturedImages(context) { success, message ->
                                 // 저장 완료 후 UI 스레드에서 실행
                                 isSaving = false // 저장 완료 상태로 변경
-                                showConfirmDialog = false // 모달 닫기
+                                showConfirmHomeDialog = false // 모달 닫기
 
                                 Toast.makeText(context, message, Toast.LENGTH_LONG).show()
 
@@ -254,10 +250,94 @@ fun PhotoPreviewScreen(
             dismissButton = {
                 TextButton(
                     onClick = {
-                        showConfirmDialog = false // 모달 닫기
+                        showConfirmHomeDialog = false // 모달 닫기
                     }
                 ) {
                     Text("취소")
+                }
+            }
+        )
+    }
+
+    if (showConfirmSaveDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                // 모달 바깥쪽을 클릭하거나 뒤로가기 버튼을 눌렀을 때 모달을 닫음
+                showConfirmSaveDialog = false
+            },
+            text = {
+                Text(text = "저장하시겠습니까?")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (!isSaving) { // 중복 실행 방지
+                            isSaving = true // 저장 시작 상태로 변경
+
+                            viewModel.saveCapturedImages(context) { success, message ->
+                                // 저장 완료 후 UI 스레드에서 실행
+                                isSaving = false // 저장 완료 상태로 변경
+                                showConfirmSaveDialog = false // 모달 닫기
+
+                                Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+
+                                if (success) {
+                                    viewModel.clearPhotos()
+                                    showRetakeDialog = true
+                                } else {
+                                    // 저장 실패 시 추가적인 사용자 안내 또는 로직
+                                }
+                            }
+                        }
+                    },
+                    enabled = !isSaving
+                ) {
+                    if (isSaving) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp)) // 저장 중 로딩 표시
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("저장 중...")
+                    } else {
+                        Text("확인")
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showConfirmSaveDialog = false // 모달 닫기
+                    }
+                ) {
+                    Text("취소")
+                }
+            }
+        )
+    }
+
+    if (showRetakeDialog) {
+        RetakeConfirmDialog(
+            viewModel = viewModel,
+            onDismissRequest = {
+                // 사용자가 팝업 바깥을 누르거나 '취소' 버튼을 누르면 상태를 false로 바꿔 팝업을 닫습니다.
+                showRetakeDialog = false
+            },
+            onGoHome = {
+                showRetakeDialog = false
+
+                navController.navigate("home") {
+                    popUpTo("home") { inclusive = true }
+                }
+            },
+            onSaveAndRetake = {
+                showRetakeDialog = false
+                navController.navigate("camera_screen"){
+                    popUpTo("home") { inclusive = true }
+                }
+            },
+            onRetakeWithoutSaving = {
+                showRetakeDialog = false
+                val siteName = viewModel.siteName.value
+                navController.navigate("photo_settings/$siteName") {
+                    popUpTo("home") { inclusive = true }
                 }
             }
         )

@@ -112,7 +112,7 @@ class PhotoSettingViewModel : ViewModel() {
                     put("촬영시각", timestamp.value)
                 }
 
-                exif.setAttribute(ExifInterface.TAG_USER_COMMENT, jsonData.toString())
+                exif.setAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION, jsonData.toString())
                 exif.saveAttributes()
             }
 

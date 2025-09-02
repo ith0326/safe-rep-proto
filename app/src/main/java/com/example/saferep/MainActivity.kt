@@ -42,13 +42,11 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                     composable("camera_screen") {
-                        // ✅ ViewModel 전달
                         CameraScreen(
                             navController = navController,
                             viewModel = photoSettingViewModel
                         )
                     }
-                    // ✅ 새로운 미리보기 화면 경로 추가 및 ViewModel 전달
                     composable("photo_preview") {
                         PhotoPreviewScreen(
                             navController = navController,
