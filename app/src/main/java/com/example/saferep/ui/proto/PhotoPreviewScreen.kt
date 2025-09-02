@@ -40,6 +40,7 @@ fun PhotoPreviewScreen(
     val images = viewModel.capturedImageUris.value
 
     var showConfirmDialog by remember { mutableStateOf(false) }
+    var isSaving by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -188,15 +189,15 @@ fun PhotoPreviewScreen(
                     val inspectionDetail = viewModel.inspectionDetail.value
 
                     val basePath = if (location.isBlank()) {
-                        "/SAFE-REP/${siteName}/${datePart}/"
+                        "SAFE-REP/${siteName}/${datePart}/"
                     } else {
-                        "/SAFE-REP/${siteName}/${datePart}/${location}/${inspectionPart}/${inspectionDetail}/"
+                        "SAFE-REP/${siteName}/${datePart}/${location}/${inspectionPart}/${inspectionDetail}/"
                     }
 
                     // 저장경로
                     viewModel.basePath.value = basePath
 
-                    Text("Pictures" + basePath, fontSize = 14.sp)
+                    Text("Pictures/" + basePath, fontSize = 14.sp)
                 }
             }
         }
@@ -217,20 +218,37 @@ fun PhotoPreviewScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        showConfirmDialog = false // 모달 닫기
+                        if (!isSaving) { // 중복 실행 방지
+                            isSaving = true // 저장 시작 상태로 변경
+                            // ViewModel의 파일 저장 함수 호출
+                            viewModel.saveCapturedImages(context) { success, message ->
+                                // 저장 완료 후 UI 스레드에서 실행
+                                isSaving = false // 저장 완료 상태로 변경
+                                showConfirmDialog = false // 모달 닫기
 
-                        // TODO: 1. 여기에 실제 파일 저장 로직을 호출합니다.
-                        // 예시: viewModel.saveImages() 또는 별도의 파일 저장 함수 호출
-                        // 현재는 Toast 메시지로 대체합니다.
-                        Toast.makeText(context, "파일 저장 로직 실행 (예정)", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, message, Toast.LENGTH_LONG).show()
 
-                        // 2. 홈 화면으로 이동 (이전 화면 스택 모두 제거)
-                        navController.navigate("home") {
-                            popUpTo("home") { inclusive = true }
+                                if (success) {
+                                    // 저장 성공 시 홈 화면으로 이동
+                                    viewModel.clearPhotos() // 저장 후 임시 사진 목록 초기화 (선택 사항)
+                                    navController.navigate("home") {
+                                        popUpTo("home") { inclusive = true }
+                                    }
+                                } else {
+                                    // 저장 실패 시 추가적인 사용자 안내 또는 로직
+                                }
+                            }
                         }
-                    }
+                    },
+                    enabled = !isSaving
                 ) {
-                    Text("확인")
+                    if (isSaving) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp)) // 저장 중 로딩 표시
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("저장 중...")
+                    } else {
+                        Text("확인")
+                    }
                 }
             },
             dismissButton = {
