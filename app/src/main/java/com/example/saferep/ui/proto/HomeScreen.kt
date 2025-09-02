@@ -2,6 +2,7 @@ package com.example.saferep.ui.proto
 
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
@@ -12,9 +13,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -50,6 +55,10 @@ fun HomeScreen(navController: NavController) {
 
     val context = LocalContext.current
 
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+    val focusRequester = remember { FocusRequester() }
+
     if (showBottomSheet) {
         ModalBottomSheet(
             onDismissRequest = { showBottomSheet = false }, // 배경 클릭 시 닫기
@@ -71,7 +80,15 @@ fun HomeScreen(navController: NavController) {
     val value = Column(
         modifier = Modifier
             .fillMaxSize() // 화면 전체 채우기
-            .padding(horizontal = 24.dp, vertical = 16.dp), // 좌우, 상하 여백ㅁㄴ
+            .padding(horizontal = 24.dp, vertical = 16.dp)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null, // 클릭 시 물결 효과 제거
+                onClick = {
+                    focusManager.clearFocus() // 모든 포커스를 해제
+                    keyboardController?.hide() // 키보드를 숨김
+                }
+            ), // 좌우, 상하 여백ㅁㄴ
         horizontalAlignment = Alignment.CenterHorizontally // 자식 요소들 가로 중앙 정렬
     ) {
 
@@ -115,7 +132,8 @@ fun HomeScreen(navController: NavController) {
                         .weight(1f)
                         .onFocusChanged { focusState ->
                             isTextFieldFocused = focusState.isFocused
-                        },
+                        }
+                        .focusRequester(focusRequester),
                     shape = RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = lightBlue,

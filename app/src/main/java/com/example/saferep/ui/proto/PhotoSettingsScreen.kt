@@ -3,6 +3,7 @@ package com.example.saferep.ui.proto
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
@@ -26,6 +27,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -75,6 +78,8 @@ fun PhotoSettingsScreen(navController: NavController, siteName: String, viewMode
 
     var isLocationFocused by remember { mutableStateOf(false) }
 
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
     val focusRequester = remember { FocusRequester() }
     var isDirectInputFocused by remember { mutableStateOf(false) }
 
@@ -148,7 +153,15 @@ fun PhotoSettingsScreen(navController: NavController, siteName: String, viewMode
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp)
-                .verticalScroll(scrollState),
+                .verticalScroll(scrollState)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null, // 클릭 시 물결 효과 제거
+                    onClick = {
+                        focusManager.clearFocus() // 모든 포커스를 해제
+                        keyboardController?.hide() // 키보드를 숨김
+                    }
+                ),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // 현재 현장 섹션
