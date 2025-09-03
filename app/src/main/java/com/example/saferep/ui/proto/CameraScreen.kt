@@ -187,6 +187,18 @@ private fun CameraView(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // 촬영 종료 버튼
+            Button(
+                onClick = { navController.navigate("photo_preview") },
+                modifier = Modifier
+                    .height(56.dp)
+                    .width(150.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+            ) {
+                Text("촬영 종료", color = Color.White, fontSize = 18.sp)
+            }
+
             // 촬영 버튼
             Button(
                 onClick = {
@@ -205,18 +217,6 @@ private fun CameraView(
                     tint = Color.White,
                     modifier = Modifier.size(40.dp)
                 )
-            }
-
-            // 촬영 종료 버튼
-            Button(
-                onClick = { navController.navigate("photo_preview") },
-                modifier = Modifier
-                    .height(56.dp)
-                    .width(150.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
-            ) {
-                Text("촬영 종료", color = Color.White, fontSize = 18.sp)
             }
         }
     }
