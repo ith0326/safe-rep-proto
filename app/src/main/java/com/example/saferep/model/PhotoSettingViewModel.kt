@@ -17,6 +17,7 @@ import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Locale
 import android.provider.MediaStore
+import android.util.Base64
 import androidx.compose.runtime.mutableStateOf
 import org.json.JSONObject
 
@@ -112,7 +113,10 @@ class PhotoSettingViewModel : ViewModel() {
                     put("촬영시각", timestamp.value)
                 }
 
-                exif.setAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION, jsonData.toString())
+                val jsonString = jsonData.toString()
+                val base64String = Base64.encodeToString(jsonString.toByteArray(), Base64.DEFAULT)
+
+                exif.setAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION, base64String)
                 exif.saveAttributes()
             }
 

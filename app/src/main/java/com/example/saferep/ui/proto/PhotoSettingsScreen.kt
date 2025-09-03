@@ -1,7 +1,10 @@
+@file:OptIn(ExperimentalFoundationApi::class)
+
 package com.example.saferep.ui.proto
 
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -9,6 +12,8 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -25,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -34,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.saferep.model.PhotoSettingViewModel
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -390,6 +397,11 @@ fun DetailBottomSheetContent(
     onItemSelected: (String) -> Unit,
     onCancel: () -> Unit
 ) {
+
+    val scrollState = rememberScrollState()
+    val bringIntoViewRequester = remember { BringIntoViewRequester() }
+    val coroutineScope = rememberCoroutineScope()
+
     // 점검부위에 따라 다른 세부 부위 목록을 결정
     val detailItems = when (mainCategory) {
         "상부" -> listOf("바닥판", "거더", "직접입력")
@@ -419,76 +431,78 @@ fun DetailBottomSheetContent(
         }
     }
 
-    Column(
+    LazyColumn(
         modifier = Modifier
-            .padding(16.dp)
-            .fillMaxHeight(0.80f)
+            .padding(horizontal = 16.dp)
+            .fillMaxHeight(0.80f) // 높이 제한
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            TextButton(onClick = onCancel) { Text("취소") }
-            Text("세부 부위 선택", fontWeight = FontWeight.Bold)
-            TextButton(
-                onClick = {
-                    val result = if (currentSelection == "직접입력") {
-                        directInputText // '직접입력' 선택 시 텍스트 필드 값을 결과로
-                    } else {
-                        currentSelection // 그 외에는 선택된 항목 이름을 결과로
-                    }
-                    onItemSelected(result)
-                }
-            ) { // '확인' 누르면 선택값 전달
-                Text("확인")
-            }
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // ✅ 3. UI를 Text 대신 Button 목록으로 변경
-        LazyColumn {
-            items(detailItems) { item ->
-                val isSelected = item == currentSelection
-                Button(
+        // 최상단 메뉴 (취소, 제목, 확인)
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextButton(onClick = onCancel) { Text("취소") }
+                Text("세부 부위 선택", fontWeight = FontWeight.Bold)
+                TextButton(
                     onClick = {
-                        currentSelection = item
-                        if (item != "직접입력") {
-                            directInputText = ""
+                        val result = if (currentSelection == "직접입력") directInputText else currentSelection
+                        if (result.isNotBlank()) {
+                            onItemSelected(result)
+                        }
+                    }
+                ) { Text("확인") }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        // 세부 부위 선택 버튼 리스트
+        items(detailItems) { item ->
+            val isSelected = item == currentSelection
+            Button(
+                onClick = { currentSelection = item },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isSelected) Color(0xFF6495ED) else Color(0xFFF0F0F0),
+                    contentColor = if (isSelected) Color.White else Color.Black
+                )
+            ) {
+                Text(item)
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        // 직접 입력 텍스트 필드
+        item {
+            Spacer(modifier = Modifier.height(16.dp))
+            OutlinedTextField(
+                value = directInputText,
+                onValueChange = { directInputText = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(focusRequester)
+                    .onFocusChanged { isDirectInputFocused = it.isFocused }
+                    // 이 로직은 LazyColumn 안에서도 완벽하게 동작합니다.
+                    .bringIntoViewRequester(bringIntoViewRequester)
+                    .onFocusEvent { focusState ->
+                        if (focusState.isFocused) {
+                            coroutineScope.launch {
+                                bringIntoViewRequester.bringIntoView()
+                            }
                         }
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isSelected) niceBlue else lightGray,
-                        contentColor = if (isSelected) Color.White else Color.Black
-                    )
-                ) {
-                    Text(item)
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // ✅ 5. 직접 입력 텍스트 필드 추가
-        OutlinedTextField(
-            value = directInputText,
-            onValueChange = { directInputText = it },modifier = Modifier
-                .fillMaxWidth()
-                .focusRequester(focusRequester)
-                .onFocusChanged { isDirectInputFocused = it.isFocused },
-            placeholder = { Text(if (isDirectInputFocused) "입력중" else "직접입력 선택시 활성화") },
-            shape = RoundedCornerShape(8.dp),
-            enabled = currentSelection == "직접입력", // '직접입력'이 선택됐을 때만 활성화
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = niceBlue,
-                unfocusedBorderColor = Color.LightGray
+                placeholder = { Text(if (isDirectInputFocused) "입력중" else "직접입력 선택시 활성화") },
+                shape = RoundedCornerShape(8.dp),
+                enabled = currentSelection == "직접입력",
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color(0xFF6495ED),
+                    unfocusedBorderColor = Color.LightGray
+                )
             )
-        )
+            Spacer(modifier = Modifier.height(16.dp)) // 하단 여백
+        }
     }
 
     @Composable
